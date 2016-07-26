@@ -1,1 +1,1 @@
-web: gunicorn babs-analysis.py --log-file -
+web: gunicorn app:app

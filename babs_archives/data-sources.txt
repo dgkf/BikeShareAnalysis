@@ -1,4 +1,0 @@
-BABS data from http://www.bayareabikeshare.com/open-data (2013-2015)
-	Files sorted into individual directories
-Used Google Maps Elevation API to build elevation data for each BABS station. (https://developers.google.com/maps/documentation/elevation/intro)
-	station_data_elevation.csv elevation columns generated from this data (file included in repo)
