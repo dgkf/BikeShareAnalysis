@@ -1,7 +1,6 @@
 chardet==2.3.0
 click==6.6
 cycler==0.10.0
-defer==1.0.6
 dill==0.2.5
 dominate==2.2.1
 Flask==0.11.1
