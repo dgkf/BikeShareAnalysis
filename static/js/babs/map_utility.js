@@ -41,6 +41,7 @@ $(document).ready(new function() {
                   slng + (elng-slng)*0.67 - (elat-slat)*(i/d.AvgDailyTrips*0.04+0.005) )});
           trip_lines.push({i: Math.floor(trip_lines.length / 4),
                latlng: new L.LatLng(elat, elng)});
+          break;
         }
       })
 
@@ -64,16 +65,17 @@ $(document).ready(new function() {
         .x(function(d) { return usage_map.latLngToLayerPoint(d.latlng).x })
         .y(function(d) { return usage_map.latLngToLayerPoint(d.latlng).y })
         .curve(d3.curveCatmullRom.alpha(0.5))
-      function transition(path) {
-        path.transition()
-            .duration(2000)
-            .attrTween("stroke-dasharray", tweenDash)
-            .each("end", function() { d3.select(this).call(transition); });
-      }
-      function tweenDash() {
-        var l = this.getTotalLength();
-        interpolate = d3.interpolateString("0," + l, l + "," + l);
-        return interpolate;
+      function transition_wrapper() {
+        transition_repeat(d3.select(this))
+
+        function transition_repeat(path) {
+          path.transition()
+              .duration(15000)
+              .ease(d3.easeLinear)
+              .styleTween("stroke-dashoffset", function() { return d3.interpolateNumber(0, 499) })
+              .on("end", function() { transition_repeat(path) } )
+              .on("interrupt", function() { transition_repeat(path) } )
+        }
       }
       // create lines
       var lines = g.selectAll(".series")
@@ -83,10 +85,13 @@ $(document).ready(new function() {
         .attr("class", "tripline")
         .attr("d", function(d) { return line_from_latlng_array(d.values) })
         .style("fill", "none")
-        .style("stroke", "navy")
-        .style("stroke-width", "0.5px")
-        .style("stroke-opacity", 0.2)
-        //.call(transition);
+        .style("stroke", "#4444AA")
+        .style("stroke-width", "3px")
+        .style("stroke-opacity", 0.3)
+        .style("stroke-dasharray", function(d) { i = Math.floor(Math.random() * 497);
+                                                 return "0,"+i+",3,"+(500-i) })
+        .style("stroke-dashoffset", 0)
+        .each(transition_wrapper) // Adds repetition
 
       // set up callback for moving map
       usage_map.on("zoom", update);
@@ -95,7 +100,7 @@ $(document).ready(new function() {
 
       // function to set point size
       function getRadiusPx() {
-        return Math.pow(2, (usage_map.getZoom()-INIT_ZOOM+1))
+        return Math.pow(2, (usage_map.getZoom()-INIT_ZOOM+2))
       }
 
       // update function for datapoints on map move
@@ -110,7 +115,7 @@ $(document).ready(new function() {
 
         // reposition lines based on latlong offset
         lines.attr("d", function(d) { return line_from_latlng_array(d.values)})
-          .style("stroke-opacity", 0.2 * Math.pow(2, (usage_map.getZoom()-INIT_ZOOM)));
+          .style("stroke-opacity", 0.3 * Math.pow(2, (usage_map.getZoom()-INIT_ZOOM)));
       }
     });
   });
