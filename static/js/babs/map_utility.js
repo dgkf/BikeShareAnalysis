@@ -65,18 +65,21 @@ $(document).ready(new function() {
         .x(function(d) { return usage_map.latLngToLayerPoint(d.latlng).x })
         .y(function(d) { return usage_map.latLngToLayerPoint(d.latlng).y })
         .curve(d3.curveCatmullRom.alpha(0.5))
-      function transition_wrapper() {
-        transition_repeat(d3.select(this))
+        
+      // Function for adding d3 transition - ultimately replaced by css animation
+      // function transition_wrapper() {
+      //   transition_repeat(d3.select(this))
+      //
+      //   function transition_repeat(path) {
+      //     path.transition()
+      //         .duration(15000)
+      //         .ease(d3.easeLinear)
+      //         .styleTween("stroke-dashoffset", function() { return d3.interpolateNumber(0, 499) })
+      //         .on("end", function() { transition_repeat(path) } )
+      //         .on("interrupt", function() { transition_repeat(path) } )
+      //   }
+      // }
 
-        function transition_repeat(path) {
-          path.transition()
-              .duration(15000)
-              .ease(d3.easeLinear)
-              .styleTween("stroke-dashoffset", function() { return d3.interpolateNumber(0, 499) })
-              .on("end", function() { transition_repeat(path) } )
-              .on("interrupt", function() { transition_repeat(path) } )
-        }
-      }
       // create lines
       var lines = g.selectAll(".series")
         .data(trip_data)
@@ -91,7 +94,8 @@ $(document).ready(new function() {
         .style("stroke-dasharray", function(d) { i = Math.floor(Math.random() * 497);
                                                  return "0,"+i+",3,"+(500-i) })
         .style("stroke-dashoffset", 0)
-        .each(transition_wrapper) // Adds repetition
+        //.each(transition_wrapper) // Adds repetition
+        .style("animation", "dashoffset_animation 10s linear 0s infinite")
 
       // set up callback for moving map
       usage_map.on("zoom", update);
