@@ -1,7 +1,7 @@
 import os, sys, math, re, copy                        # foundational
 import sqlite3                                        # data import
-import pandas as pd, numpy as np                      # datahandling & analysis
-import dill, simplejson                               # import/export
+import pandas as pd, numpy as np, datetime            # datahandling & analysis
+import dill                                           # import/export
 
 from matplotlib import pyplot as plt, colors          # preliminary plotting
 
@@ -16,6 +16,8 @@ dill.settings['recurse'] = True
 
 # Query to access data from station_usage table in babs_archive.db database
 _BABS_QUERY = 'SELECT * FROM station_usage'
+_BABS_CSV_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                              os.path.pardir, 'datafiles', 'babs_archives')
 _ELEVATION_CSV_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)),
              os.path.pardir,
              'datafiles', 'generated_files', 'sf_topo.csv')
@@ -202,13 +204,66 @@ def retrainModel():
         dill.dump(babs_usage_model, f)
 
 
-def main(argv):
+def remapStationLocations():
     # Load Station Data
     conn = sqlite3.connect(_BABS_DATABASE_PATH)
     station_data = pd.read_sql(_BABS_QUERY, conn)
     station_data['Usage'] = 0.5*(station_data['Start Count'] + station_data['End Count'])
 
+    station_data[['Latitude', 'Longitude', 'Landmark']].to_json(os.path.join(
+        os.path.dirname(os.path.realpath(__file__)),
+        os.path.pardir, 'static', 'json', 'station_locations.json'),
+        orient="records")
 
+
+def remapStationUsage():
+    _LATEST_DATA = datetime.datetime(2015,8,31)
+    trip_dir = os.path.join(_BABS_CSV_PATH, 'trip_data')
+    read_csv_params = {"usecols": ['Start Date', 'Start Terminal', 'End Terminal', 'Subscriber Type']}
+
+    # Trip Data
+    trip_data = pd.concat([pd.read_csv(fp, **read_csv_params) for fp in [os.path.join(trip_dir,f) for f in os.listdir(trip_dir)]])
+
+    # Load Station Data
+    conn = sqlite3.connect(_BABS_DATABASE_PATH)
+    station_data = pd.read_sql(_BABS_QUERY, conn, parse_dates=['Installation'])
+    station_data['LatLng'] = [{'Lat': station_data['Latitude'][i], 'Lng': station_data['Longitude'][i]} for i in xrange(len(station_data))]
+
+    # Aggregate trips and reindex with latitude and longitude of each terminal instead of station ID
+    trip_data = trip_data.groupby(['Start Terminal', 'End Terminal']).agg({'Start Date': 'count'})
+    trip_data.columns = ['TripCount']
+
+    # Flatten dataset so that it can easily be indexed in D3
+    trip_data.reset_index(inplace=True)
+
+    # Merge with station information about installation
+    trip_data = pd.merge(trip_data, station_data[['Station ID', 'Installation', 'LatLng', 'Landmark']], left_on='Start Terminal', right_on='Station ID')
+    trip_data.rename(columns={'Installation': 'StartInstallation', 'LatLng': 'StartLatLng'}, inplace=True)
+    trip_data = trip_data[trip_data['Landmark'] == "San Francisco"]
+    trip_data.drop(['Station ID', 'Landmark'], 1, inplace=True)
+    trip_data = pd.merge(trip_data, station_data[['Station ID', 'Installation', 'LatLng', 'Landmark']], left_on='End Terminal', right_on='Station ID')
+    trip_data.rename(columns={'Installation': 'EndInstallation', 'LatLng': 'EndLatLng'}, inplace=True)
+    trip_data = trip_data[trip_data['Landmark'] == "San Francisco"]
+    trip_data.drop(['Station ID', 'Landmark'], 1, inplace=True)
+
+    # Calculate average daily trips
+    trip_data['AvgDailyTrips'] = trip_data['TripCount'] / np.minimum((_LATEST_DATA - trip_data['StartInstallation']) / np.timedelta64(1, 'D'), (_LATEST_DATA - trip_data['EndInstallation']) / np.timedelta64(1, 'D'))
+
+    # Write out aggregated data to a file
+    trip_data[['StartLatLng', 'EndLatLng', 'AvgDailyTrips']] \
+        .to_json(os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                              os.path.pardir, 'static', 'json', 'trip_agg.json'),
+                 orient='records')
+
+
+def main(argv):
+    remapStationUsage()
+    sys.exit()
+
+    # Load Station Data
+    conn = sqlite3.connect(_BABS_DATABASE_PATH)
+    station_data = pd.read_sql(_BABS_QUERY, conn)
+    station_data['Usage'] = 0.5*(station_data['Start Count'] + station_data['End Count'])
 
     print("\n\nLoading model to file ... ")
     with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), os.path.pardir, 'models', 'babs_usage_model.dill'), 'r') as f:
