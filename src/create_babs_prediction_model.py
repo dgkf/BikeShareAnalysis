@@ -1,8 +1,9 @@
 import os, sys, math, re, copy                        # foundational
 import sqlite3                                        # data import
-import pandas as pd, numpy as np, datetime            # datahandling & analysis
+import pandas as pd, numpy as np, datetime, scipy     # datahandling & analysis
 import dill                                           # import/export
 
+import matplotlib
 from matplotlib import pyplot as plt, colors          # preliminary plotting
 
 import sklearn as sk                                  # scikit-learn and accessories
@@ -256,8 +257,47 @@ def remapStationUsage():
                  orient='records')
 
 
+def outputPredictions():
+    # Load Station Data
+    conn = sqlite3.connect(_BABS_DATABASE_PATH)
+    station_data = pd.read_sql(_BABS_QUERY, conn)
+    station_data['Usage'] = 0.5*(station_data['Start Count'] + station_data['End Count'])
+
+    print("\n\nLoading model to file ... ")
+    with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), os.path.pardir, 'models', 'babs_usage_model.dill'), 'r') as f:
+            babs_usage_model = dill.load(f)
+
+    # Interpolate all features from feature models
+    lats, longs = np.meshgrid(np.linspace(37.7,37.82,50), np.linspace(-122.55,-122.35,50))
+    transformed_features = babs_usage_model.named_steps['features_from_lat_long'].transform(pd.DataFrame({'Latitude': lats.reshape(1,-1).squeeze(), 'Longitude': longs.reshape(1,-1).squeeze()}))
+
+    prediction_features = pd.DataFrame({'Latitude': lats.reshape(1,-1).squeeze(), 'Longitude': longs.reshape(1,-1).squeeze()})
+    usage_predictions = babs_usage_model.predict(prediction_features)
+    usage_predictions[np.array(transformed_features['Elevation']<0)] = np.nan
+    usage_predictions = np.lib.scimath.logn(100, usage_predictions - np.nanmin(usage_predictions) + 1)
+
+    usage_predictions = (usage_predictions - np.nanmean(usage_predictions)) / np.nanstd(usage_predictions)
+
+    print(usage_predictions)
+
+    #usage_predictions = np.lib.scimath.logn(100, np.abs(usage_predictions)) * ((usage_predictions > 0)*2-1)
+    usage_predictions.clip(np.nanmean(usage_predictions)-np.nanstd(usage_predictions)*1.5,
+                           np.nanmean(usage_predictions)+np.nanstd(usage_predictions)*1.5)
+
+    print(usage_predictions)
+    print(pd.DataFrame({'A':usage_predictions}).describe())
+
+    predictions = pd.DataFrame(
+        {'Lat': lats.reshape(1,-1).squeeze()[np.logical_not(np.isnan(usage_predictions))],
+         'Lng': longs.reshape(1,-1).squeeze()[np.logical_not(np.isnan(usage_predictions))],
+         'Prediction': usage_predictions[np.logical_not(np.isnan(usage_predictions))]}).to_json(os.path.join(
+            os.path.dirname(os.path.realpath(__file__)),
+            os.path.pardir, 'static', 'json', 'predictions.json'),
+            orient="records")
+
+
 def main(argv):
-    remapStationUsage()
+    outputPredictions()
     sys.exit()
 
     # Load Station Data
@@ -270,20 +310,26 @@ def main(argv):
             babs_usage_model = dill.load(f)
 
     # Interpolate all features from feature models
-    lats, longs = np.meshgrid(np.linspace(37.7,37.82,50), np.linspace(-122.53,-122.35,50))
+    lats, longs = np.meshgrid(np.linspace(37.7,37.82,30), np.linspace(-122.55,-122.35,30))
     transformed_features = babs_usage_model.named_steps['features_from_lat_long'].transform(pd.DataFrame({'Latitude': lats.reshape(1,-1).squeeze(), 'Longitude': longs.reshape(1,-1).squeeze()}))
 
     prediction_features = pd.DataFrame({'Latitude': lats.reshape(1,-1).squeeze(), 'Longitude': longs.reshape(1,-1).squeeze()})
     usage_predictions = babs_usage_model.predict(prediction_features)
-    usage_predictions[transformed_features['Elevation']<0] = np.nan
+    usage_predictions[np.array(transformed_features['Elevation']<0)] = np.nan
     usage_predictions = np.lib.scimath.logn(100, usage_predictions - np.nanmin(usage_predictions) + 1)
     usage_predictions[np.where(np.isnan(usage_predictions))] = 0
 
-    plt.contourf(longs, lats, usage_predictions.reshape(50,50),
-                 norm=colors.Normalize(np.mean(usage_predictions)-(2*np.std(usage_predictions)), np.mean(usage_predictions)+(2*np.std(usage_predictions)), clip=True),
-                 levels=np.linspace(0.,max(usage_predictions),300))
-    plt.contour(longs, lats, (transformed_features['Elevation']).reshape(50,50), linewidth=0.2, colors='white')
+    plt.contourf(longs, lats, usage_predictions.reshape(30,-1),
+                 norm=colors.Normalize(np.mean(usage_predictions)-(1*np.std(usage_predictions)), np.mean(usage_predictions)+(1*np.std(usage_predictions)), clip=True),
+                 levels=np.linspace(0.01,max(usage_predictions),300))
+    plt.contour(longs, lats, (transformed_features['Elevation']).reshape(30,-1), linewidth=0.2, colors='white')
     plt.scatter(station_data[station_data['Landmark']=='San Francisco']['Longitude'], station_data[station_data['Landmark']=='San Francisco']['Latitude'], s=2, )
+
+    # plt.scatter(longs,
+    #             lats,
+    #             #s=(usage_predictions<0)*10,
+    #             s=(transformed_features['Elevation']>0)*10,
+    #             cmap=matplotlib.cm.Reds)
     plt.show()
 
 if __name__ == "__main__":
