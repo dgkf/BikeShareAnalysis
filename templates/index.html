@@ -26,34 +26,70 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="#">Expansit</a>
         </div>
         <div class="collapse navbar-collapse">
           <ul class="nav navbar-nav navbar-right">
             <li class="active"><a href="#">Home</a></li>
-            <li><a href="#about">About</a></li>
-            <li><a href="#contact">Contact</a></li>
+            <li><a href="/about">About</a></li>
+            <li><a href="/contact">Contact</a></li>
           </ul>
         </div>
       </div>
     </div>
 
     <div class="jumbotron">
-      <div class="container">
-        <h2>Expanding Transit</h1>
-        <p class="lead">Data driven transit development. Take a look at how people use the <a href="www.bayareabikeshare.com">Bay Area Bike Share</a> in San Francisco! Every 10 seconds represents the avarage daily traffic.</p>
-        <div id="usage_map" style="min-width: 200px; width: 100%; height: 600px;">
+      <div style="background: #D0D0D0;">
+        <div class="container">
+          <img src="/static/img/banner.jpg" width="100%" height="100%" style="box-shadow: 0px 0px 5em #808080;"/>
         </div>
       </div>
-      <div class="container">
-        <h2>Targeted Expansion</h1>
-        <p class="lead">Modelling station traffic based on social, economic and geographic features.</p>
-        <div id="prediction_map" style="min-width: 200px; width: 100%; height: 600px;">
+      <div class="container" style="margin-top: 4em; text-align: justify;">
+        <p>The Bay Area network of bike sharing locations is slated to expand its fleet by <a href="http://www.govtech.com/fs/Bay-Area-to-Roll-Out-New-Smart-Bike-System.html">nearly 10 fold by 2018</a> - expanding to two new hubs in the East Bay and San Jose. With the rapid growth of the program, it's important to develop tools to inform its growth and best serve the community.</p>
+        <p>As of 2015, the program was used for nearly one thousand trips every day. Take a look at how the <a href="www.bayareabikeshare.com">Bay Area Bike Share</a> is being used in San Francisco!</p>
+        <div id="usage_map" style="min-width: 200px; width: 100%; height: 400px;"></div>
+        <p style="font-size: smaller;">Every 10 seconds represents the avarage daily traffic.</p>
+      </div>
+      <div class="container" style="margin-top: 4em; text-align: justify;">
+        <h2>Targeted Expansion</h2>
+        <p>To inform the system's expansion, it's important to first understand how the existing system is being used. We can use that information to predict how new stations might serve the surrounding community. Using features like the geographical landscape, socioeconomic information about the surrounding community, availability of public transit and existing data about the system's utility, we can predict how effective the system would be in surrounding areas.
+
+        <h3 style="margin-top: 2em;"><b>Data Sources</b></h3>
+        <p>Data was amassed from a number of different sources. Primarily, this includes:</p>
+        <ul>
+          <li><p>Topological features at each existing site were sourced through <a href=https://developers.google.com/maps/documentation/elevation/intro>Google's Elevations API</a></p></li>
+          <li><p>Historical Bike Share data was sourced through the <a href="http://www.bayareabikeshare.com/open-data">BABS open data initative</a> (2013-2015).</p></li>
+          <li><p>Socioeconomic and census data sourced from the <a href="http://toddata.cnt.org/">Center for Transit-Oriented Development</a>. All data is geospatially coupled, allowing for interpolation. This data includes, but is not limited to:</p></li>
+          <ul>
+            <li><p>Age distributions</p></li>
+            <li><p>Employment rates</p></li>
+            <li><p>Percent of income that goes towards housing</p></li>
+            <li><p>Percent of income that goes towards transportation</p></li>
+            <li><p>Median household income</p></li>
+            <li><p>Population density</p></li>
+            <li><p>Vehicle ownership</p></li>
+            <li><p>Racial distribution</p></li>
+          </ul>
+        </ul>
+
+        <h3 style="margin-top: 2em;"><b>Methods</b></h3>
+        <p><a href="http://scikit-learn.org/stable/modules/neighbors.html">K-Nearest Neighbors</a> interpolation models were fit for each of the incoming geospatial features, allowing for an arbitrary latitude and longitude to be passed to each interpolation model to generate data at locations without explicit data.</p>
+        <p>An <a href="http://scikit-learn.org/stable/modules/generated/sklearn.linear_model.ElasticNet.html">ElasticNet</a> regression was trained using the latitude and longitudes of existing sites to train a prediction model against historical site usage data.</p>
+        <p>A raster scan of the latitudes and longitudes of the San Francisco peninsula was fed to the model to predict utility at arbitrary locations throughout.</p>
+
+        <h3 style="margin-top: 2em;"><b>Result</b></h3>
+        <p>Take a look! Areas in red are locations that can be best served by a bike share service whereas areas in blue are unlikely to benefit strongly.</p>
+        <div id="prediction_map" style="min-width: 200px; width: 100%; height: 400px;">
         </div>
+
+        <h3 style="margin-top: 2em;"><b>Improvements</b></h3>
+        <p>Although the methods used proved tremendously helpful for creating location based prediction models, the data generated is quite naive. Most notably, the number of features far outweigh the number of available datapoints (at least when looking only at the Bay Area Bike Share system). However, there are roughly 70 additional bike share services in the United States that can be used to help improve the model's accuracy. Including a more diverse population, with data from locations which are more strongly affected by weather conditions imposes its own fair share of complications which is why this pilot study was limited to only the Bay Area system.</p>
+        <p>The system could also be expanded in the features that are being used. Public data sources for street quality as it affects bicycling, for example, would assuredly have a strong impact on immediate adoption.</p>
+      </div>
+      <div style="margin-top: 4em; text-align: center; background: #C0C0C0; padding: 1em 0em 0.1em 0em;">
+        <p style="font-size: small;">Content best viewed using the Chrome browser</p>
       </div>
     </div>
 
     <script src="static/js/babs/map_utility.js" type='text/javascript'></script>
-
   </body>
 </html>

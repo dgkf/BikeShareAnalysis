@@ -297,9 +297,6 @@ def outputPredictions():
 
 
 def main(argv):
-    outputPredictions()
-    sys.exit()
-
     # Load Station Data
     conn = sqlite3.connect(_BABS_DATABASE_PATH)
     station_data = pd.read_sql(_BABS_QUERY, conn)
