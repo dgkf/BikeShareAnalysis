@@ -38,7 +38,7 @@
     </div>
 
     <div class="jumbotron" style="margin: 0 0;">
-      <div style="background: #D0D0D0; overflow: hidden; margin: 10vh 0 10vh 0;" >
+      <div style="background: #D0D0D0; overflow: hidden; margin: 10vh 0 5vh 0;" >
         <div class="container">
           <img src="/static/img/banner.jpg" width="100%" height="100%" style="box-shadow: 0 0 3em 1.5em #808080; border-left: 0.3em solid #F0F0F0; border-right: 0.3em solid #F0F0F0;"/>
         </div>
@@ -47,14 +47,14 @@
         <p>The Bay Area network of bike sharing locations is slated to expand its fleet by <a href="http://www.govtech.com/fs/Bay-Area-to-Roll-Out-New-Smart-Bike-System.html">nearly 10 fold by 2018</a> - expanding to two new hubs in the East Bay and San Jose. With the rapid growth of the program, it's important to develop tools to inform its growth and best serve the community.</p>
         <p>As of 2015, the program was used for nearly one thousand trips every day. Take a look at how the <a href="www.bayareabikeshare.com">Bay Area Bike Share</a> is being used in San Francisco!</p>
         <div id="usage_map" style="min-width: 200px; width: 100%; height: 400px;"></div>
-        <p style="font-size: smaller;">Every 10 seconds represents the avarage daily traffic.</p>
+        <p style="font-size: small; text-align: right;">An average day of traffic every 10 seconds.</p>
       </div>
       <div class="container" style="margin-top: 4em; text-align: justify;">
         <h2>Targeted Expansion</h2>
         <p>To inform the system's expansion, it's important to first understand how the existing system is being used. We can use that information to predict how new stations might serve the surrounding community. Using features like the geographical landscape, socioeconomic information about the surrounding community, availability of public transit and existing data about the system's utility, we can predict how effective the system would be in surrounding areas.
 
         <h3 style="margin-top: 2em;"><b>Data Sources</b></h3>
-        <p>Data was amassed from a number of different sources. Primarily, this includes:</p>
+        <p>Data was amassed from three public data sources, from government census data to the Bay Area Bike Share itself.</p>
         <ul>
           <li><p>Topological features at each existing site were sourced through <a href=https://developers.google.com/maps/documentation/elevation/intro>Google's Elevations API</a></p></li>
           <li><p>Historical Bike Share data was sourced through the <a href="http://www.bayareabikeshare.com/open-data">BABS open data initative</a> (2013-2015).</p></li>
@@ -78,8 +78,8 @@
 
         <h3 style="margin-top: 2em;"><b>Result</b></h3>
         <p>Take a look! Areas in red are locations that can be best served by a bike share service whereas areas in blue are unlikely to benefit strongly.</p>
-        <div id="prediction_map" style="min-width: 200px; width: 100%; height: 400px;">
-        </div>
+        <div id="prediction_map" style="min-width: 200px; width: 100%; height: 400px;"></div>
+        <p style="font-size: small; text-align: right;">Data normalized based on screenspace for relative comparison amongst surrounding areas. Some edge effects as a result. This representation is most reliable when viewing areas nearby existing transit and its accuracy becomes more unreliable as you venture away.</p>
 
         <h3 style="margin-top: 2em;"><b>Improvements</b></h3>
         <p>Although the methods used proved tremendously helpful for creating location based prediction models, the data generated is quite naive. Most notably, the number of features far outweigh the number of available datapoints (at least when looking only at the Bay Area Bike Share system). However, there are roughly 70 additional bike share services in the United States that can be used to help improve the model's accuracy. Including a more diverse population, with data from locations which are more strongly affected by weather conditions imposes its own fair share of complications which is why this pilot study was limited to only the Bay Area system.</p>
